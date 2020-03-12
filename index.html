@@ -1,0 +1,528 @@
+<!doctype html>
+<html style="height:100%">
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+    <div id="container" style="height: 100%; -webkit-tap-highlight-color: transparent; user-select: none; background: transparent;" _echarts_instance_="ec_1559635535747"><div style="position: relative; overflow: hidden; width: 1344px; height: 699px; padding: 0px; margin: 0px; border-width: 0px; cursor: default;"><canvas width="1680" height="873" data-zr-dom-id="zr_0" style="position: absolute; left: 0px; top: 0px; width: 1344px; height: 699px; user-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); padding: 0px; margin: 0px; border-width: 0px;"></canvas><canvas width="1680" height="873" data-zr-dom-id="zr_2" style="position: absolute; left: 0px; top: 0px; width: 1344px; height: 699px; user-select: none; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); padding: 0px; margin: 0px; border-width: 0px;"></canvas></div></div>
+    <script type="text/javascript" src="echarts.min.js"></script>
+    <script type="text/javascript" src="jquery.min.js"> </script>
+    <link rel="stylesheet" href="//a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=	f8af1b97983b2c23a0ca818e01e7dc3b"></script>
+    <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+    <script src="./js/echarts-amap.min.js" charset="UTF-8"></script>
+<script type="text/javascript">
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    myChart.showLoading();
+    // 各个行政区与国家之间的映射关系
+    var state_district_map = {
+	"清朝": ["江苏", "湖北", "陕西", "安徽", "福建", "湖南", "广东", "广西", "浙江", "江西", "山西", "河南", "山东", "甘肃", "云南", "贵州", "直隶", "黑龙江", "吉林", "青海", "内蒙古", "奉天", "四川", "新疆", "西藏"],
+	"外蒙古（独立）": ["乌里雅苏台"],
+	"台湾(日本占领)": ["台湾(日本占领)"],
+	"日本": ["日本"]
+    };
+    // 经过的城市坐标和省会坐标
+    var citys_location = {
+        "南京": [118.800643, 32.066725], 
+        "武昌": [114.351201,30.566976], 
+        "西安": [108.943788,34.348917], 
+        "怀宁": [116.835007,30.741122], 
+        "福州": [119.32158, 26.07395], 
+        "长沙": [112.942595,28.237046], 
+        "番禺": [113.388757,22.94568],
+        "邕宁": [108.491114,22.766879],
+        "杭州": [120.213022,30.255202],
+        "南昌": [115.86322,28.691212],
+        "阳曲": [112.677353,38.066551],
+        "开封": [114.313014,34.804525],
+        "历城": [117.070022,36.687619],
+        "皋兰": [103.951779,36.339754],
+        "昆明": [102.850816,24.875817],
+        "贵阳": [106.634577,26.6551],
+        "天津": [117.209052,39.14548],
+        "龙江": [123.209679,47.344958],
+        "吉林": [126.552472,43.84533],
+        "沈阳": [123.454423,41.722401],
+        "成都": [104.07968,30.657506],
+        "迪化": [87.621519,43.832527],
+        "拉萨": [91.117481,29.651974],
+        "仙台":[140.87193489074707,38.26684701594281],
+        "东京":[139.7647726535797,35.68160530533613],
+        "绍兴":[120.5732077360153,29.995957128270863],
+        "北平":[116.39091968536377,39.91204048926006],
+        "上海":[121.46855592727661,31.235114421248575],
+        "厦门":[118.0790376663208,24.45804900677667]
+    };  //,"呼和浩特": [111.753149,40.850286],"西宁": [101.783503,36.625212],
+
+    // 首府列表
+    var capitals_list = ["成都", "福州","南京", "武昌", "西安", "怀宁", "太原", "长沙","番禺", "邕宁", "杭州", "南昌", "阳曲", "开封", "历城", "皋兰", "昆明", "贵阳", "天津", "龙江", "吉林", "沈阳", "迪化"]; 
+    // 城市数据，都用白色字体
+    var city_series = {
+    type: 'effectScatter',
+    coordinateSystem: 'amap',
+    zlevel: 2,
+    symbolSize:5,
+    rippleEffect: {
+        brushType: 'fill'
+    },
+    label: {
+    normal: {
+        show: true,
+        position: 'right',
+        formatter: '{b}',
+        textStyle: {color: '#101010'}
+    }
+    },
+    data: Object.keys(citys_location).map(function (key) {
+    var item = new Object();
+    item.name = key;
+    item.value = citys_location[key];
+    if(capitals_list.indexOf(key) != -1 ){
+    item.itemStyle= {normal: {color: '#FF4D40'}};
+    }
+    else {
+    item.itemStyle= {normal: {color: '#101010'}};
+    }
+    return item;
+    })
+    };
+    // 地图底图着色数据，应该都用浅色，防止与黑色的字冲突
+var state_color_dict = {
+    '中国': 'rgb(255, 128, 51)',
+    '海外': 'rgb(255, 229, 180)',
+    '台湾(日本占领)': 'rgb(185, 222, 173)',
+    '日本': 'rgb(255, 228, 196)',
+    '外蒙古（独立）': 'rgb(255, 229, 180)',
+};
+// 给地图着色
+var paintMap = function(state, colors) {
+    var data = [];
+    Object.keys(state).forEach(function(key) {
+        // key: the name of the object key
+        districts = state[key];
+        for (var i = 0; i < districts.length; i++) {
+            var item = new Object();
+            item.name = districts[i];
+            item.itemStyle = {
+                normal: {
+                    areaColor: colors[key]
+                }
+            };
+            data.push(item);
+        }
+    });
+    return data;
+};
+// 地图图例
+// echarts要求图例必须与某个series绑定，为此必须制造一些虚假series
+var fake_series = Object.keys(state_color_dict).map(function(item) {
+    return {
+        type: 'scatter',                 //散点（气泡）图
+        name: item,
+        coordinateSystem: 'amap',
+        itemStyle: {
+            normal: {
+                color: state_color_dict[item]
+            }
+        }
+    };
+});
+// 设置图例数据
+var map_legend_data = Object.keys(state_color_dict).map(function(item) {
+    return {
+        name: item,
+        icon: 'roundRect', //圆角矩形
+        //textStyle: {color: state_color_dict[item]}
+    };
+});
+// 时间线
+var time_ticks = [{
+                    value: "1881年", 
+                    tooltip: {
+                        formatter: '{b} 鲁迅生于浙江绍兴城内东昌坊新台门周家。幼名阿张，长根，长庚，学名周樟寿。'  //提示框浮层内容格式器，支持字符串模板和回调函数两种形式。
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1892年',
+                    tooltip: {
+                        formatter: '{b} 入三味书屋从寿镜吾读书'  //提示框浮层内容格式器，支持字符串模板和回调函数两种形式。
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1898年',
+                    tooltip: {
+                        formatter: '{b} 入南京水师学堂，改名周树人'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1899年',
+                    tooltip: {
+                        formatter: '{b}转入江南陆师学堂附设矿务铁路学堂，学开矿'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1904年',
+                    tooltip: {
+                        formatter: '{b}入仙台医学专门学校（现东北大学）肄业，相识藤野严九郎'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                }, 
+                {
+                    value: "1906年",
+                    tooltip: {
+                        formatter: '{b}被骗回国与朱安结婚。旋即复赴日本'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                }, 
+                {
+                    value: "1908年",
+                    tooltip: {
+                        formatter: '{b}7月，从仙台回到东京，不再入学读书，专门从事文艺译著工作，此后几年通过不同方式学习了德语，俄语。'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                }, 
+                {
+                    value: '1909年',
+                    tooltip: {
+                        formatter: '{b} 归国，任杭州、浙江两级师范学堂生理学和化学教员兼任日本教员铃木珪寿的植物学翻译'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                            "1910年", 
+                {
+                    value: '1912年',
+                    tooltip: {
+                        formatter: '{b} 应教育总长蔡元培之邀，任教育部社会教育司第一科科长'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1918年',
+                    tooltip: {
+                        formatter: '{b} 5月，以鲁迅为笔名发表中国现代文学史上第一篇用现代体式创作的白话短篇小说《狂人日记》'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1923年',
+                    tooltip: {
+                        formatter: '{b} 小说集《呐喊》出版；与弟弟周作人分居，迁至西四塔胡同61号居住，分居原因不明'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                '1924年',
+                {
+                    value: '1926年',
+                    tooltip: {
+                        formatter: '{b} 8月，《彷徨》出版，赴厦门大学任国文系教授'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                '1927年',
+                {
+                    value: '1927年',
+                    tooltip: {
+                        formatter: '{b} 9月，致信台静农，拒绝作为诺贝尔文学奖候选人，离开广州赴上海，并与许广平在上海开始同居生活。'
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                },
+                {
+                    value: '1936年',
+                    tooltip: {
+                        formatter: '{b}10月17日病复发，18日黎明前疾病发作，气喘不止。19日上午5时25分逝世于上海 '
+                    },
+                    symbol: 'diamond',
+                    symbolSize: 16
+                }];
+
+// 标题列表
+var title_list = [
+  '鲁迅出生',
+  '入三味书屋从寿镜吾读书',
+  '入南京水师学堂，改名周树人',
+  '入江南陆师学堂附设矿务铁路学堂，学开矿',
+  '入仙台医学专门学校（现东北大学）',
+  '朱安结婚。旋即复赴日本',
+  '前往东京',
+  '归国',
+  '回到家乡绍兴',
+  '任教育部社会教育司第一科科长',
+  '发表《狂人日记》',
+  '与弟弟周作人分居',
+  '7月，赴西安讲《中国小说的历史变迁》',
+  '《彷徨》出版，赴厦门大学任国文系教授',
+  '1月，中山大学任教',
+  '与许广平在上海开始同居生活',
+  '鲁迅逝世于上海',
+];
+// 获取各人轨迹
+var persons = ["鲁迅"];
+var full_tracks = [
+["绍兴", "南京", "仙台", "绍兴","仙台", "东京", "杭州","绍兴", "北平", "西安", "北平", "厦门", "番禺", "上海"]
+];
+var citys_num_passed = [ //数量和时间线相对应，数字表示一次移动几个地方
+    [0, 0, 2, 2, 3, 5, 6, 7, 8, 9, 9, 9, 11, 12, 13, 14, 15, 15]
+];
+    // 转换为路线数据所需格式
+    var points2lines= function (points) {
+    var tracks = [];
+    for (var i = 0; i < points.length - 1; i++) {
+    var fromCoord = citys_location[points[i]];
+    var toCoord = citys_location[points[i+1]];
+    if (fromCoord && toCoord) {
+    tracks.push({
+        name: points[i] + '=>' + points[i+1],
+        coords: [fromCoord, toCoord]
+    });
+    }
+    }
+    return tracks;
+    };
+    //tracks_data = points2lines(life_tracks);
+    tracks_data = full_tracks.map(function(item) {
+        return points2lines(item);
+    });
+    // 动态路线模板
+var line_series_template = {
+    type: 'lines',   //用于带有起点和终点信息的线数据的绘制，主要用于地图上的航线，路线的可视化。
+    zlevel: 2,
+    symbol: ['none', 'arrow'],
+    symbolSize: 10,
+    coordinateSystem: 'amap',
+    /*线特效的配置*/
+    effect: {          
+        show: true,
+        period: 3,     //特效动画的时间，单位为 s
+        trailLength: 0.1,  //特效尾迹的长度。取从 0 到 1 的值，数值越大尾迹越长。
+        symbol: 'arrow',  //特效图形的标记。
+        symbolSize: 10,    //特效标记的大小
+        loop:false    //是否循环显示特效。
+    },
+    lineStyle: {
+        normal: {
+            color: '#008DAB',
+            width: 2,
+            opacity: 0.8,     //图形透明度。支持从 0 到 1 的数字，为 0 时不绘制该图形。
+            curveness: 0.1,    //边的曲度，支持从 0 到 1 的值，值越大曲度越大。
+           
+        }
+    },
+    lable:{
+        show:true,
+    },
+    data: [] //convertData(life_tracks)
+};
+// 基底数据序列
+var person_line_colors = ['rgb(25,89,102)'];
+var person_line_curveness = [0.05, 0.1, 0.15];
+var line_series_template_str = JSON.stringify(line_series_template);  //JSON.stringify()将一个JavaScript值(对象或者数组)转换为一个 JSON字符串
+var base_series = [city_series].concat(fake_series);
+for(var n = 0; n < persons.length; n++ ){
+  var line_series = JSON.parse(line_series_template_str); //JSON.parse() 方法将数据转换为 JavaScript 对象
+      line_series.name = persons[n];
+      line_series.lineStyle.normal.color = person_line_colors[n];
+      line_series.lineStyle.normal.curveness = person_line_curveness[n];
+      base_series.push(line_series);
+}
+
+
+//var planePath = 'path://M1705.06,1318.313v-89.254l-319.9-221.799l0.073-208.063c0.521-84.662-26.629-121.796-63.961-121.491c-37.332-0.305-64.482,36.829-63.961,121.491l0.073,208.063l-319.9,221.799v89.254l330.343-157.288l12.238,241.308l-134.449,92.931l0.531,42.034l175.125-42.917l175.125,42.917l0.531-42.034l-134.449-92.931l12.238-241.308L1705.06,1318.313z';
+var iconPath = 'path://M2,2 L2,11 L10,6 L2,2';  //箭头形状
+// 增补路线图例
+var tracks_legend_data = [];
+for(var n = 0; n < persons.length; n++ ){
+  tracks_legend_data.push({
+    name: persons[n],
+    icon: iconPath 
+  });
+}
+
+var option = {
+        baseOption: {
+        amap: {
+             maxPitch: 60,
+             pitch: 10, //45 俯仰角
+             viewMode: '3D',
+             zoom: 5.5,
+             expandZoomRange: true,
+             zooms: [3, 20],
+             mapStyle: 'amap://styles/b56305ee535eaaba74c5f4d0199c1b1b', //地图主题
+             center: [110,33], //中心点
+             rotation: 0,  //顺时针旋转角度
+             resizeEnable: true,
+        },
+            timeline: {                 //时间线
+                axisType: 'category',   //类目轴，适用于离散的类目数据  
+                orient: 'horizontal',    //摆放方式，可选值有:'horizontal'：水平放置;'vertical'垂直
+                autoPlay: true,         //表示是否自动播放。
+                inverse: false,         //是否反向放置 timeline，反向则首位颠倒过来。
+                playInterval: 3000,    //表示播放的速度（跳动的间隔），单位毫秒（ms）。
+                symbol:"triangle",
+                right: 30,
+                // top: 40,
+                bottom: "bottom",
+                left: 'center',
+                width: 600,
+                data: time_ticks,
+            }, //end baseOption
+		        tooltip: {},
+            title: {
+            //text: '',
+            // subtext: '制图: 黄娟',
+                top: 'top',
+                left: 'center',
+                textStyle: {
+                    color: '#888'
+                }
+            },
+
+            geo: {
+                map: 'amap',
+                show: true,
+                roam: true,
+                regions: paintMap(state_district_map, state_color_dict)
+            },
+            //TODO 加上图例
+            legend: [
+            //     {
+            //     orient: 'vertical',
+            //     top: '60%',
+            //     left: '75%',
+            //     selectedMode: false,
+            //     // data: map_legend_data,
+            //     textStyle: {
+            //         color: '#333'
+            //     }
+            // },
+            {
+              orient: 'vertical',//人物图例
+              top: '60%',
+              left: '80%',
+              data: tracks_legend_data
+            }
+            ],
+            series: base_series
+        },
+        options: []
+    };// end option
+    myChart.setOption(option);
+    myChart.hideLoading();
+       // 注册地图
+    var map = myChart.getModel().getComponent('amap').getAMap();
+    var layer = myChart.getModel().getComponent('amap').getLayer();
+    
+    AMap.plugin(["AMap.ControlBar"], function() {
+         var bar = new AMap.ControlBar();
+         map.addControl(bar);
+    })
+    AMap.plugin(["AMap.ToolBar"], function() {
+     map.addControl(new AMap.ToolBar());
+    });
+
+    ajax('mapofluxun.geojson', function(err, geoJSON) {
+        if (!err) {
+            var geojson = new AMap.GeoJSON({
+                geoJSON: geoJSON,
+                // 还可以自定义getMarker和getPolyline
+                getPolygon: function(geojson, lnglats) {
+                    // 计算面积
+                    var area = AMap.GeometryUtil.ringArea(lnglats[0])
+                    return new AMap.Polygon({
+                        path: lnglats,
+                        fillOpacity: 0.1,// 面积越大透明度越高
+                        strokeColor: 'white',
+                        fillColor: 'red'
+                    });
+                }
+            });
+            geojson.setMap(map);
+            log.success('GeoJSON 数据加载完成')
+        } else {
+            log.error('GeoJSON 服务请求失败')
+         }
+    });
+    AMap.event.addListener(map,'zoomend',function(){
+        console.log('当前缩放级别：' + map.getZoom());
+        console.log('俯视视角' + map.getPitch());
+        console.log('俯视视角' + map.getPitch());
+    });
+
+    //base_series =  [city_series].concat(fake_series);
+ //TODO: 给关键点事件添加副标题
+    // 添加路线图例
+    var series_num = option.baseOption.series.length;
+    var persons_num = persons.length;
+
+    var update_series = [];//Array(series_num).fill({});
+    for(var n = 0; n < series_num; n++){
+      update_series.push({})
+    }
+    for(var n = 0; n < persons_num; n++){
+      update_series[series_num-persons_num+n].data = [];
+    }
+
+    update_series[2].name = 'hi';
+    var update_series_str = JSON.stringify(update_series);
+    for (var n = 0; n < time_ticks.length; n++) {
+        var updater = JSON.parse(update_series_str);
+
+        for(var i = 0; i < persons_num; i++){
+          if(citys_num_passed[i][n] > 1){
+            var data = tracks_data[i].slice(0, citys_num_passed[i][n]-1); //在数组中读取元素
+            updater[series_num-persons_num+i].data = data;
+          }
+        }
+        if(typeof time_ticks[n] === 'string'){
+          var title_suffix = time_ticks[n];
+        }
+        else {
+          var title_suffix = time_ticks[n].value;
+        }
+
+        option.options.push({
+          title: {
+                 text: '鲁迅人生轨迹图' + ' （' + title_suffix + '） ' +
+                   '\n\n' + title_list[n],
+                 },
+          series: updater
+        });
+
+    }
+    myChart.setOption(option);
+// end $.get
+
+
+    //下面是确保高德地图渲染的时候，echarts同时也需要再次渲染一次，保持位置的同步
+    layer.render = function() {
+        myChart.setOption({
+         series: []
+     });
+    console.log('当前缩放级别：' + map.getZoom());
+    console.log('俯视视角：' + map.getPitch());
+    console.log('顺时针：' + map.getRotation());
+};
+
+    </script>
+
+</body>
+</html>
+
+
